@@ -65,4 +65,16 @@ describe("buildOverlayMarks", () => {
       { type: "delete", text: "Removed", x: 0, y: 0, height: 12 },
     ]);
   });
+
+  it("anchors a leading delete at the next word's box when it's an insert, not an equal", () => {
+    const ops: PositionedDiffOp[] = [
+      { type: "delete", word: word("Whereas", 0) },
+      { type: "insert", word: word("Therefore", 40, 5, 30, 14) },
+    ];
+
+    expect(buildOverlayMarks(ops)).toEqual([
+      { type: "delete", text: "Whereas", x: 40, y: 5, height: 14 },
+      { type: "insert", x: 40, y: 5, width: 30, height: 14 },
+    ]);
+  });
 });
