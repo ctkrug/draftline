@@ -90,8 +90,7 @@ export function buildPdf(pages: PdfPageSpec[]): Uint8Array {
     xref += `${offset.toString().padStart(10, "0")} 00000 n \n`;
   }
 
-  const trailer =
-    `trailer\n<< /Size ${totalObjects} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  const trailer = `trailer\n<< /Size ${totalObjects} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
   const pdfString = body + xref + trailer;
   return new TextEncoder().encode(pdfString);

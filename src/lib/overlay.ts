@@ -29,7 +29,13 @@ export function buildOverlayMarks(ops: PositionedDiffOp[]): OverlayMark[] {
     }
 
     if (op.type === "insert") {
-      marks.push({ type: "insert", x: op.word.x, y: op.word.y, width: op.word.width, height: op.word.height });
+      marks.push({
+        type: "insert",
+        x: op.word.x,
+        y: op.word.y,
+        width: op.word.width,
+        height: op.word.height,
+      });
       lastAnchor = { x: op.word.x + op.word.width, y: op.word.y, height: op.word.height };
       i++;
       continue;
@@ -43,7 +49,13 @@ export function buildOverlayMarks(ops: PositionedDiffOp[]): OverlayMark[] {
     }
 
     const anchor = lastAnchor ?? findForwardAnchor(ops, i);
-    marks.push({ type: "delete", text: words.join(" "), x: anchor.x, y: anchor.y, height: anchor.height });
+    marks.push({
+      type: "delete",
+      text: words.join(" "),
+      x: anchor.x,
+      y: anchor.y,
+      height: anchor.height,
+    });
   }
 
   return marks;

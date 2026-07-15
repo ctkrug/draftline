@@ -57,7 +57,10 @@ describe("appReducer", () => {
   });
 
   it("moves to the error phase on LOAD_FAILED from any prior state", () => {
-    const priorStates: AppState[] = [{ phase: "loading" }, { phase: "need-second-file", fileA: new File([], "a.pdf") }];
+    const priorStates: AppState[] = [
+      { phase: "loading" },
+      { phase: "need-second-file", fileA: new File([], "a.pdf") },
+    ];
 
     for (const prior of priorStates) {
       expect(appReducer(prior, { type: "LOAD_FAILED", message: "could not parse PDF" })).toEqual({
@@ -68,6 +71,8 @@ describe("appReducer", () => {
   });
 
   it("resets back to empty from any state", () => {
-    expect(appReducer({ phase: "error", message: "x" }, { type: "RESET" })).toEqual({ phase: "empty" });
+    expect(appReducer({ phase: "error", message: "x" }, { type: "RESET" })).toEqual({
+      phase: "empty",
+    });
   });
 });

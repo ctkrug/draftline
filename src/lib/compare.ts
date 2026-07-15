@@ -65,7 +65,10 @@ export async function compareDocuments(
       pageResult = { status: "removed", pageNumber };
       totals.pagesChanged++;
     } else {
-      const [pageA, pageB] = await Promise.all([docA.getPage(pageNumber), docB.getPage(pageNumber)]);
+      const [pageA, pageB] = await Promise.all([
+        docA.getPage(pageNumber),
+        docB.getPage(pageNumber),
+      ]);
       const [wordsA, wordsB] = await Promise.all([
         getPositionedWords(pageA, pageA.getViewport({ scale: 1 })),
         getPositionedWords(pageB, pageB.getViewport({ scale: 1 })),

@@ -38,6 +38,9 @@ describe("validateDroppedFiles", () => {
   });
 
   it("reports invalid for an empty file list", () => {
-    expect(validateDroppedFiles([])).toEqual({ status: "invalid", message: "No files were dropped." });
+    expect(validateDroppedFiles([])).toEqual({
+      status: "invalid",
+      message: "No files were dropped.",
+    });
   });
 });

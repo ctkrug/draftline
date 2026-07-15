@@ -27,7 +27,14 @@ describe("diffPositionedWords", () => {
 
     const ops = diffPositionedWords(a, b);
 
-    expect(ops.map((op) => op.type)).toEqual(["equal", "equal", "delete", "insert", "equal", "equal"]);
+    expect(ops.map((op) => op.type)).toEqual([
+      "equal",
+      "equal",
+      "delete",
+      "insert",
+      "equal",
+      "equal",
+    ]);
     expect(ops[2]).toEqual({ type: "delete", word: a[2] });
     expect(ops[3]).toEqual({ type: "insert", word: b[2] });
   });

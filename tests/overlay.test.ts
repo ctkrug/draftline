@@ -9,14 +9,18 @@ function word(text: string, x: number, y = 0, width = 10, height = 12): Position
 
 describe("buildOverlayMarks", () => {
   it("returns no marks for an all-equal diff", () => {
-    const ops: PositionedDiffOp[] = [{ type: "equal", wordA: word("the", 0), wordB: word("the", 0) }];
+    const ops: PositionedDiffOp[] = [
+      { type: "equal", wordA: word("the", 0), wordB: word("the", 0) },
+    ];
     expect(buildOverlayMarks(ops)).toEqual([]);
   });
 
   it("places an insert mark directly over the inserted word's own box", () => {
     const ops: PositionedDiffOp[] = [{ type: "insert", word: word("may", 40, 5, 20, 12) }];
 
-    expect(buildOverlayMarks(ops)).toEqual([{ type: "insert", x: 40, y: 5, width: 20, height: 12 }]);
+    expect(buildOverlayMarks(ops)).toEqual([
+      { type: "insert", x: 40, y: 5, width: 20, height: 12 },
+    ]);
   });
 
   it("anchors a delete mark at the end of the preceding equal word", () => {
@@ -25,7 +29,9 @@ describe("buildOverlayMarks", () => {
       { type: "delete", word: word("shall", 20) },
     ];
 
-    expect(buildOverlayMarks(ops)).toEqual([{ type: "delete", text: "shall", x: 20, y: 0, height: 12 }]);
+    expect(buildOverlayMarks(ops)).toEqual([
+      { type: "delete", text: "shall", x: 20, y: 0, height: 12 },
+    ]);
   });
 
   it("groups consecutive deletions into a single mark with joined text", () => {
@@ -47,12 +53,16 @@ describe("buildOverlayMarks", () => {
       { type: "equal", wordA: word("the", 40), wordB: word("the", 40, 0, 20, 12) },
     ];
 
-    expect(buildOverlayMarks(ops)).toEqual([{ type: "delete", text: "Whereas", x: 40, y: 0, height: 12 }]);
+    expect(buildOverlayMarks(ops)).toEqual([
+      { type: "delete", text: "Whereas", x: 40, y: 0, height: 12 },
+    ]);
   });
 
   it("falls back to the page origin when a page is deletions-only", () => {
     const ops: PositionedDiffOp[] = [{ type: "delete", word: word("Removed", 0) }];
 
-    expect(buildOverlayMarks(ops)).toEqual([{ type: "delete", text: "Removed", x: 0, y: 0, height: 12 }]);
+    expect(buildOverlayMarks(ops)).toEqual([
+      { type: "delete", text: "Removed", x: 0, y: 0, height: 12 },
+    ]);
   });
 });
