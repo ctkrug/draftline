@@ -45,15 +45,41 @@ async function flush(): Promise<void> {
   for (let i = 0; i < 5; i++) await Promise.resolve();
 }
 
+// Each mountApp() imports a fresh main.ts module instance, which registers
+// its own `window.addEventListener("resize", ...)` closing over that
+// instance's own state/root. Nothing ever removes the previous instance's
+// listener, so without cleanup every earlier test's stale listener keeps
+// firing (against a torn-down #app and a since-reset mock) on every later
+// resize dispatch. Track and remove it before mounting the next instance.
+let lastResizeHandler: EventListenerOrEventListenerObject | null = null;
+
 /** Fresh module graph per test: resetModules + re-import both the mocked
  * boundary modules (so we hold the same mock instances main.ts imports)
  * and main.ts itself, against a brand-new #app root. */
 async function mountApp() {
+  if (lastResizeHandler) {
+    window.removeEventListener("resize", lastResizeHandler);
+    lastResizeHandler = null;
+  }
+
   document.body.innerHTML = '<div id="app"></div>';
   vi.resetModules();
   const pdfMock = await import("../src/lib/pdf");
   const compareMock = await import("../src/lib/compare");
+  // vi.mock's factory only runs once, so its vi.fn() instances (and their
+  // call history/implementations) persist across vi.resetModules() calls —
+  // reset them explicitly so each mounted app starts from a clean slate.
+  vi.mocked(pdfMock.loadDocument).mockReset();
+  vi.mocked(pdfMock.renderPageToCanvas).mockReset();
+  vi.mocked(compareMock.compareDocuments).mockReset();
+  vi.mocked(compareMock.describePageCountDifference).mockReset().mockReturnValue(null);
+
+  const addSpy = vi.spyOn(window, "addEventListener");
   await import("../src/main");
+  const resizeCall = addSpy.mock.calls.find(([type]) => type === "resize");
+  lastResizeHandler = resizeCall ? (resizeCall[1] as EventListenerOrEventListenerObject) : null;
+  addSpy.mockRestore();
+
   return { pdfMock, compareMock };
 }
 
@@ -251,5 +277,220 @@ describe("main.ts DOM layer", () => {
     const marks = document.querySelectorAll(".overlay-layer .mark");
     expect(marks).toHaveLength(1);
     expect(document.querySelector(".page-nav-item--active")?.textContent).toBe("Page 3");
+  });
+
+  it("opens the file picker on Enter and on Space, not on other keys", async () => {
+    await mountApp();
+
+    const dropzone = document.querySelector<HTMLElement>(".dropzone");
+    const input = document.querySelector<HTMLInputElement>(".dropzone input");
+    if (!dropzone || !input) throw new Error("dropzone/input missing");
+    const clickSpy = vi.spyOn(input, "click");
+
+    dropzone.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true }));
+    expect(clickSpy).not.toHaveBeenCalled();
+
+    dropzone.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+
+    dropzone.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
+    expect(clickSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("adds a dragover style while a file is dragged over the dropzone", async () => {
+    await mountApp();
+
+    const dropzone = document.querySelector<HTMLElement>(".dropzone");
+    if (!dropzone) throw new Error("dropzone missing");
+
+    dropzone.dispatchEvent(new Event("dragover", { bubbles: true, cancelable: true }));
+    expect(dropzone.classList.contains("dropzone--dragover")).toBe(true);
+
+    dropzone.dispatchEvent(new Event("dragleave", { bubbles: true }));
+    expect(dropzone.classList.contains("dropzone--dragover")).toBe(false);
+  });
+
+  it("handles files chosen via the hidden file input, same as a drop", async () => {
+    await mountApp();
+
+    const input = document.querySelector<HTMLInputElement>(".dropzone input");
+    if (!input) throw new Error("file input missing");
+
+    Object.defineProperty(input, "files", { value: [pdfFile("chosen.pdf")], configurable: true });
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+
+    const banner = document.querySelector(".banner--info");
+    expect(banner?.textContent).toContain("chosen.pdf");
+  });
+
+  it("shows the page-count-mismatch banner when the two documents differ in length", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 1, b: 2 },
+      pages: [
+        { status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false },
+        { status: "added", pageNumber: 2 },
+      ],
+      totals: { additions: 0, deletions: 0, pagesChanged: 1 },
+    });
+    vi.mocked(compareMock.describePageCountDifference).mockReturnValue(
+      "Document B has 1 more page than Document A",
+    );
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    expect(document.querySelector(".banner--compact")?.textContent).toBe(
+      "Document B has 1 more page than Document A",
+    );
+    expect(document.querySelectorAll(".page-nav-item")[1]?.textContent).toBe("Page 2 — added");
+  });
+
+  it("renders the removed-page state when navigating to a page dropped from the revised document", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(2, "A") as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 2, b: 1 },
+      pages: [
+        { status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false },
+        { status: "removed", pageNumber: 2 },
+      ],
+      totals: { additions: 0, deletions: 0, pagesChanged: 1 },
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    document.querySelectorAll<HTMLButtonElement>(".page-nav-item")[1]?.click();
+    await flush();
+
+    expect(document.querySelector(".stage-caption")?.textContent).toBe(
+      "This page was removed from the revised document.",
+    );
+    expect(document.querySelector(".overlay-layer")?.classList.contains("overlay-layer--removed")).toBe(
+      true,
+    );
+  });
+
+  it("renders a grouped delete mark alongside insert marks on a compared page", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+    const ops: PositionedDiffOp[] = [{ type: "delete", word: word("removed-clause") }];
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 1, b: 1 },
+      pages: [{ status: "compared", pageNumber: 1, ops, additions: 0, deletions: 1, hasChanges: true }],
+      totals: { additions: 0, deletions: 1, pagesChanged: 1 },
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    const deleteMark = document.querySelector(".mark--delete");
+    expect(deleteMark?.textContent).toBe("− removed-clause");
+  });
+
+  it("re-renders the current page on window resize while a comparison is ready", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 1, b: 1 },
+      pages: [{ status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false }],
+      totals: { additions: 0, deletions: 0, pagesChanged: 0 },
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    const callsBefore = vi.mocked(pdfMock.renderPageToCanvas).mock.calls.length;
+    window.dispatchEvent(new Event("resize"));
+    await flush();
+
+    expect(vi.mocked(pdfMock.renderPageToCanvas).mock.calls.length).toBeGreaterThan(callsBefore);
+  });
+
+  it("does not re-render on resize while not in the ready phase", async () => {
+    const { pdfMock } = await mountApp();
+
+    window.dispatchEvent(new Event("resize"));
+    await flush();
+
+    expect(vi.mocked(pdfMock.renderPageToCanvas)).not.toHaveBeenCalled();
+  });
+
+  it("shows a readable error banner when loading a PDF fails", async () => {
+    const { pdfMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockRejectedValue(new Error("Invalid PDF structure"));
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    expect(document.querySelector(".banner--error")?.textContent).toBe("Invalid PDF structure");
+    expect(document.querySelector(".dropzone")).not.toBeNull();
+  });
+
+  it("falls back to a generic message when a load failure isn't an Error instance", async () => {
+    const { pdfMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockRejectedValue("not an Error object");
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    expect(document.querySelector(".banner--error")?.textContent).toBe(
+      "Could not read one of the PDF files.",
+    );
+  });
+
+  it("throws if the #app root element is missing from the page", async () => {
+    document.body.innerHTML = "";
+    vi.resetModules();
+    await import("../src/lib/pdf");
+    await import("../src/lib/compare");
+
+    await expect(import("../src/main")).rejects.toThrow("Missing #app root element");
   });
 });
