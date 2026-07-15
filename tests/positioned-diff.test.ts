@@ -51,6 +51,18 @@ describe("diffPositionedWords", () => {
     ]);
   });
 
+  it("marks trailing words as deleted when the revised side runs out first", () => {
+    const a = [word("the"), word("tenant"), word("shall"), word("pay")];
+    const b = [word("the")];
+
+    expect(diffPositionedWords(a, b)).toEqual([
+      { type: "equal", wordA: a[0], wordB: b[0] },
+      { type: "delete", word: a[1] },
+      { type: "delete", word: a[2] },
+      { type: "delete", word: a[3] },
+    ]);
+  });
+
   it("keeps a changed word's real box even when the edit spans a line break", async () => {
     const bytesA = buildPdf([
       {
