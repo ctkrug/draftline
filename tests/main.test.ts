@@ -438,7 +438,12 @@ describe("main.ts DOM layer", () => {
     expect(document.querySelector(".banner--compact")?.textContent).toBe(
       "Document B has 1 more page than Document A",
     );
-    expect(document.querySelectorAll(".page-nav-item")[1]?.textContent).toBe("Page 2 — added");
+    const navButtons = document.querySelectorAll(".page-nav-item");
+    expect(navButtons[1]?.textContent).toBe("Page 2 — added");
+    expect(navButtons[1]?.getAttribute("aria-label")).toBe("Page 2 — added — has changes");
+    // An unchanged page gets no aria-label override — its accessible name
+    // is just its plain text content, with no decorative-dot confusion.
+    expect(navButtons[0]?.getAttribute("aria-label")).toBeNull();
   });
 
   it("renders the removed-page state when navigating to a page dropped from the revised document", async () => {
