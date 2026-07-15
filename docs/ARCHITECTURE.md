@@ -68,6 +68,13 @@ Rendered page + diff overlay, page navigator, summary strip
 render() is cheap). Drag/drop and the hidden file input both funnel
 through `handleFiles()` → `validateDroppedFiles()`.
 
+`renderCurrentPage()` is guarded by a monotonic `renderGeneration` counter:
+every call tags itself with the current generation and re-checks it after
+each `await` (`getPage`, `renderPageToCanvas`), bailing out if a newer
+render has since started. Without this, rapid page-nav clicks (or a resize
+firing mid-render) could let a stale, slower render finish last and leave
+the canvas/overlay showing the wrong page.
+
 `style.css` implements the tokens and layout in `docs/DESIGN.md`
 (Swiss-grid modernist: ivory paper, Fraunces/IBM Plex Mono, redline-red/
 ink-green accents). One stylesheet, no CSS framework.
@@ -81,6 +88,18 @@ committing binary fixture files. `tests/setup.ts` wires pdf.js's worker
 module onto `globalThis` so it runs on the main thread under jsdom
 (no real Worker/fetchable asset URLs there) — production code still
 uses a real Worker in the browser.
+
+`tests/main.test.ts` covers the DOM layer itself (state transitions,
+drop/keyboard/drag handling, cancel/reset, the render-generation race
+guard) by mocking the `./lib/pdf` and `./lib/compare` boundary — jsdom has
+no real canvas 2D context, so `loadDocument`/`renderPageToCanvas`/
+`compareDocuments` are replaced with controllable fakes, letting tests
+control exactly when each async step resolves (needed to reproduce the
+stale-render race). `npm run test:coverage` reports coverage; run it to
+see current numbers before assuming a module is untested — `main.ts`'s
+own canvas-drawing internals and `pdf.ts`'s `renderPageToCanvas` painting
+step are the main gaps left, both real-canvas-only and verified instead
+via a real browser (Playwright) rather than jsdom.
 
 ## Build
 
