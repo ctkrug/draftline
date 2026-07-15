@@ -232,8 +232,13 @@ function buildReadyShell(readyState: Extract<AppState, { phase: "ready" }>): HTM
     const button = document.createElement("button");
     button.type = "button";
     button.className = "page-nav-item";
-    if (page.status !== "compared" || page.hasChanges) {
+    const changed = page.status !== "compared" || page.hasChanges;
+    if (changed) {
       button.classList.add("page-nav-item--changed");
+      // The "changed" dot is CSS-generated content (::before), which some
+      // screen readers include in the accessible name in a confusing form
+      // (e.g. "black circle Page 2"). State it in plain words instead.
+      button.setAttribute("aria-label", `${pageLabel(page)} — has changes`);
     }
     if (page.pageNumber === currentPageNumber) {
       button.setAttribute("aria-current", "true");
