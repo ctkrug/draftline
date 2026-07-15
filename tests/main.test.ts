@@ -414,6 +414,22 @@ describe("main.ts DOM layer", () => {
     expect(clickSpy).toHaveBeenCalledTimes(2);
   });
 
+  it("opens the file picker on a direct mouse click on the dropzone", async () => {
+    await mountApp();
+
+    const dropzone = document.querySelector<HTMLElement>(".dropzone");
+    const label = document.querySelector<HTMLElement>(".dropzone-label");
+    const input = document.querySelector<HTMLInputElement>(".dropzone input");
+    if (!dropzone || !label || !input) throw new Error("dropzone/label/input missing");
+    const clickSpy = vi.spyOn(input, "click");
+
+    // A real user click lands on the label (the input is hidden), then
+    // bubbles to the dropzone's own listener — not on the input itself.
+    label.dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
+
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+  });
+
   it("adds a dragover style while a file is dragged over the dropzone", async () => {
     await mountApp();
 
@@ -477,12 +493,22 @@ describe("main.ts DOM layer", () => {
     expect(document.querySelector(".banner--compact")?.textContent).toBe(
       "Document B has 1 more page than Document A",
     );
-    const navButtons = document.querySelectorAll(".page-nav-item");
+    const navButtons = document.querySelectorAll<HTMLButtonElement>(".page-nav-item");
     expect(navButtons[1]?.textContent).toBe("Page 2 — added");
     expect(navButtons[1]?.getAttribute("aria-label")).toBe("Page 2 — added — has changes");
     // An unchanged page gets no aria-label override — its accessible name
     // is just its plain text content, with no decorative-dot confusion.
     expect(navButtons[0]?.getAttribute("aria-label")).toBeNull();
+
+    navButtons[1]?.click();
+    await flush();
+
+    expect(document.querySelector(".stage-caption")?.textContent).toBe(
+      "This page was added in the revised document.",
+    );
+    expect(
+      document.querySelector(".overlay-layer")?.classList.contains("overlay-layer--added"),
+    ).toBe(true);
   });
 
   it("renders the removed-page state when navigating to a page dropped from the revised document", async () => {
