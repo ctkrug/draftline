@@ -65,4 +65,15 @@ describe("getPositionedWords", () => {
 
     expect(words).toEqual([]);
   });
+
+  it("skips a whitespace-only text run instead of emitting an empty word", async () => {
+    const bytes = buildPdf([{ items: [{ text: "   ", x: 72, y: 700, size: 12 }] }]);
+    const doc = await loadDocument(bytes);
+    const page = await doc.getPage(1);
+    const viewport = page.getViewport({ scale: 1 });
+
+    const words = await getPositionedWords(page, viewport);
+
+    expect(words).toEqual([]);
+  });
 });
