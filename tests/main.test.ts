@@ -141,6 +141,45 @@ describe("main.ts DOM layer", () => {
     expect(document.querySelector(".banner--error")?.textContent).toContain("3 were dropped");
   });
 
+  it("recovers from the error state when a valid pair is dropped next", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      new File(["hi"], "notes.txt", { type: "text/plain" }),
+    ]);
+    expect(document.querySelector(".banner--error")).not.toBeNull();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 1, b: 1 },
+      pages: [
+        {
+          status: "compared",
+          pageNumber: 1,
+          ops: [],
+          additions: 0,
+          deletions: 0,
+          hasChanges: false,
+        },
+      ],
+      totals: { additions: 0, deletions: 0, pagesChanged: 0 },
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    expect(document.querySelector(".app-shell")).not.toBeNull();
+    expect(document.querySelector(".banner--error")).toBeNull();
+  });
+
   it("loads and compares two valid PDFs, rendering the ready shell", async () => {
     const { pdfMock, compareMock } = await mountApp();
 
