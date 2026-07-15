@@ -10,9 +10,14 @@ export type ExtractedPage = {
   text: string;
 };
 
+/** Loads a PDF from bytes into a pdf.js document, ready for per-page work. */
+export function loadDocument(data: ArrayBuffer | Uint8Array) {
+  return pdfjsLib.getDocument({ data }).promise;
+}
+
 /** Loads a PDF from bytes and extracts the plain-text content of every page. */
 export async function extractPages(data: ArrayBuffer | Uint8Array): Promise<ExtractedPage[]> {
-  const doc = await pdfjsLib.getDocument({ data }).promise;
+  const doc = await loadDocument(data);
   const pages: ExtractedPage[] = [];
 
   for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
