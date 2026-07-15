@@ -14,6 +14,7 @@ if (!root) {
 let state: AppState = initialAppState;
 let currentPageNumber = 1;
 let activeCompareController: AbortController | null = null;
+let renderGeneration = 0;
 
 function dispatch(action: AppAction): void {
   state = appReducer(state, action);
@@ -281,6 +282,13 @@ function buildReadyShell(readyState: Extract<AppState, { phase: "ready" }>): HTM
 async function renderCurrentPage(): Promise<void> {
   if (state.phase !== "ready" || !root) return;
 
+  // Rapid page-nav clicks (or a resize firing mid-render) can start a new
+  // render before an older one's awaits resolve. Without a generation guard,
+  // a slower stale render would finish last and overwrite the canvas/overlay
+  // with the wrong page's content. Every await below re-checks this token
+  // and bails as soon as a newer render has started.
+  const generation = ++renderGeneration;
+
   const wrap = root.querySelector<HTMLDivElement>(".page-canvas-wrap");
   const canvas = root.querySelector<HTMLCanvasElement>(".page-canvas");
   const overlayLayer = root.querySelector<HTMLDivElement>(".overlay-layer");
@@ -299,7 +307,9 @@ async function renderCurrentPage(): Promise<void> {
 
   if (pageResult.status === "removed") {
     const page = await state.docA.getPage(currentPageNumber);
+    if (generation !== renderGeneration) return;
     const viewport = await renderPageToCanvas(page, canvas, cssWidth, pixelRatio);
+    if (generation !== renderGeneration) return;
     canvasWrapMatchOverlaySize(overlayLayer, viewport.width, viewport.height);
     overlayLayer.classList.add("overlay-layer--removed");
     caption.textContent = "This page was removed from the revised document.";
@@ -308,7 +318,9 @@ async function renderCurrentPage(): Promise<void> {
 
   if (pageResult.status === "added") {
     const page = await state.docB.getPage(currentPageNumber);
+    if (generation !== renderGeneration) return;
     const viewport = await renderPageToCanvas(page, canvas, cssWidth, pixelRatio);
+    if (generation !== renderGeneration) return;
     canvasWrapMatchOverlaySize(overlayLayer, viewport.width, viewport.height);
     overlayLayer.classList.add("overlay-layer--added");
     caption.textContent = "This page was added in the revised document.";
@@ -316,7 +328,9 @@ async function renderCurrentPage(): Promise<void> {
   }
 
   const page = await state.docB.getPage(currentPageNumber);
+  if (generation !== renderGeneration) return;
   const viewport = await renderPageToCanvas(page, canvas, cssWidth, pixelRatio);
+  if (generation !== renderGeneration) return;
   canvasWrapMatchOverlaySize(overlayLayer, viewport.width, viewport.height);
 
   if (pageResult.ops.length === 0) {
