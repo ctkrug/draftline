@@ -129,6 +129,18 @@ describe("main.ts DOM layer", () => {
     expect(banner?.textContent).toContain("notes.txt");
   });
 
+  it("shows an error, not a silent 2-of-3 comparison, when three PDFs are dropped", async () => {
+    await mountApp();
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("a.pdf"),
+      pdfFile("b.pdf"),
+      pdfFile("c.pdf"),
+    ]);
+
+    expect(document.querySelector(".banner--error")?.textContent).toContain("3 were dropped");
+  });
+
   it("loads and compares two valid PDFs, rendering the ready shell", async () => {
     const { pdfMock, compareMock } = await mountApp();
 
