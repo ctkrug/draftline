@@ -9,7 +9,7 @@ concrete, checkable acceptance criteria — no "works well" vibes. `[ ]` = not s
 
 The reason this project exists: drop two PDFs in, watch the diff highlight over the real page.
 
-- [ ] **1.1 Drop two PDFs and see the highlighted diff overlay** *(the wow moment — build first)*
+- [ ] **1.1 Drop two PDFs and see the highlighted diff overlay** _(the wow moment — build first)_
   - Dropping two valid PDF files renders page 1 with diff highlights visible, with zero network
     requests for file content (verified via devtools: no XHR/fetch carrying file bytes).
   - Additions render in `--accent-ins` and deletions in `--accent-del`, positioned directly over

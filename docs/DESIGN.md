@@ -8,30 +8,30 @@ poster: a strict grid, restrained type, generous whitespace, and functional colo
 sparingly and meaningfully — not decoratively. The one indulgence is the redline itself: a
 confident editorial red for deletions and a cool ink green for additions, exactly the marks a
 careful reader would make with two different pens. Everything else stays quiet so those marks
-read as *the* signal on the page.
+read as _the_ signal on the page.
 
-One sentence: *Draftline looks like a Swiss type foundry's specimen sheet that happens to also
+One sentence: _Draftline looks like a Swiss type foundry's specimen sheet that happens to also
 be a redlining tool — a strict grid, quiet ivory paper, and two confident editorial marks: red
-for cut, green for added.*
+for cut, green for added._
 
 This direction hasn't been used in recent ships (recent sibling projects lean manuscript-paper,
 blueprint-schematic, or forensic-case-file — this is grid-and-type-first, not texture-first).
 
 ## 2. Tokens
 
-| Token | Value | Use |
-|---|---|---|
-| `--bg` | `#f4f2ec` | page background — warm off-white, not stark white |
-| `--surface-1` | `#ffffff` | cards, the page-image canvas mount |
-| `--surface-2` | `#e8e5dc` | recessed panels (sidebar, drop zone idle state) |
-| `--ink` | `#17171a` | primary text — near-black, not pure #000 |
-| `--ink-muted` | `#5c5b54` | secondary text, captions, metadata |
-| `--rule` | `#c9c6b8` | grid lines, dividers, borders |
-| `--accent-del` | `#c0242c` | deletions — redline red |
-| `--accent-ins` | `#1f7a4d` | additions — ink green |
+| Token            | Value     | Use                                                                                                                  |
+| ---------------- | --------- | -------------------------------------------------------------------------------------------------------------------- |
+| `--bg`           | `#f4f2ec` | page background — warm off-white, not stark white                                                                    |
+| `--surface-1`    | `#ffffff` | cards, the page-image canvas mount                                                                                   |
+| `--surface-2`    | `#e8e5dc` | recessed panels (sidebar, drop zone idle state)                                                                      |
+| `--ink`          | `#17171a` | primary text — near-black, not pure #000                                                                             |
+| `--ink-muted`    | `#5c5b54` | secondary text, captions, metadata                                                                                   |
+| `--rule`         | `#c9c6b8` | grid lines, dividers, borders                                                                                        |
+| `--accent-del`   | `#c0242c` | deletions — redline red                                                                                              |
+| `--accent-ins`   | `#1f7a4d` | additions — ink green                                                                                                |
 | `--accent-focus` | `#1d4ed8` | focus rings, links, primary interactive accent (cool blue reads as "system," distinct from the red/green diff marks) |
-| `--danger` | `#c0242c` | error states (shares the deletion red — errors and deletions are both "something's wrong here") |
-| `--success` | `#1f7a4d` | success states (shares the addition green) |
+| `--danger`       | `#c0242c` | error states (shares the deletion red — errors and deletions are both "something's wrong here")                      |
+| `--success`      | `#1f7a4d` | success states (shares the addition green)                                                                           |
 
 **Type pairing:** display font **"Fraunces"** (a high-contrast serif with real personality for
 the wordmark and headings — ties to the document/editorial subject matter without being a
@@ -81,7 +81,7 @@ renders) instead of a generic spinner.
 
 ## 5. Juice plan
 
-Draftline is a utility, not a game, so "juice" here means *responsive, legible feedback*, not
+Draftline is a utility, not a game, so "juice" here means _responsive, legible feedback_, not
 particle effects:
 
 - Dropping a file: the drop zone border animates from dashed `--rule` to solid `--accent-focus`

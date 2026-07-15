@@ -16,9 +16,7 @@ export async function extractPages(data: ArrayBuffer): Promise<ExtractedPage[]> 
   for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber++) {
     const page = await doc.getPage(pageNumber);
     const content = await page.getTextContent();
-    const text = content.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .join(" ");
+    const text = content.items.map((item) => ("str" in item ? item.str : "")).join(" ");
 
     pages.push({ pageNumber, text });
   }

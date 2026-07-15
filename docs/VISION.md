@@ -13,7 +13,7 @@ The two realistic options today are:
    error-prone — the human eye is bad at spotting a single changed word in two forty-page
    documents.
 
-There's no free, private, unlimited option that does the comparison *for* you.
+There's no free, private, unlimited option that does the comparison _for_ you.
 
 ## Who it's for
 
@@ -34,7 +34,7 @@ Draftline runs the entire comparison in the browser:
    which words changed rather than flagging whole paragraphs.
 4. The original page is rendered as a canvas image (via pdf.js), and the diff result is painted
    as highlighted overlays positioned using the original text's bounding boxes — so the user sees
-   the change *in place*, in the document's real layout, not as a plain-text dump.
+   the change _in place_, in the document's real layout, not as a plain-text dump.
 
 The wow moment is the instant a user drops two files in and the highlighted diff appears over
 the real page image with no upload step and no spinner waiting on a server round-trip.
