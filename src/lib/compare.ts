@@ -37,12 +37,15 @@ function yieldToMainThread(): Promise<void> {
  * Calls `onPage` as each page finishes and yields to the event loop between
  * pages, so a long document (BACKLOG 2.3) doesn't block the main thread for
  * its whole length — callers can render page 1 the moment it's ready instead
- * of waiting on all of them.
+ * of waiting on all of them. Pass `signal` to let a cancel control stay
+ * responsive throughout: an aborted signal stops before the next page starts
+ * and throws the signal's abort reason (an `AbortError` by default).
  */
 export async function compareDocuments(
   docA: PDFDocumentProxy,
   docB: PDFDocumentProxy,
   onPage?: (page: PageCompareResult, index: number, total: number) => void,
+  signal?: AbortSignal,
 ): Promise<CompareResult> {
   const pageCount = { a: docA.numPages, b: docB.numPages };
   const pages: PageCompareResult[] = [];
@@ -51,6 +54,8 @@ export async function compareDocuments(
   const maxPages = Math.max(pageCount.a, pageCount.b);
 
   for (let pageNumber = 1; pageNumber <= maxPages; pageNumber++) {
+    signal?.throwIfAborted();
+
     let pageResult: PageCompareResult;
 
     if (pageNumber > pageCount.a) {
