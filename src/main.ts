@@ -13,6 +13,7 @@ if (!root) {
 
 let state: AppState = initialAppState;
 let currentPageNumber = 1;
+let activeCompareController: AbortController | null = null;
 
 function dispatch(action: AppAction): void {
   state = appReducer(state, action);
@@ -139,6 +140,13 @@ function buildLoadingState(): HTMLElement {
   text.className = "loading-text";
   text.textContent = "Comparing documents…";
   loading.appendChild(text);
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.className = "cancel-btn";
+  cancelButton.textContent = "Cancel";
+  cancelButton.addEventListener("click", () => activeCompareController?.abort());
+  loading.appendChild(cancelButton);
 
   container.appendChild(loading);
   return container;
@@ -394,10 +402,13 @@ function handleFiles(files: File[]): void {
 async function loadAndCompare(fileA: File, fileB: File): Promise<void> {
   dispatch({ type: "LOADING" });
 
+  const controller = new AbortController();
+  activeCompareController = controller;
+
   try {
     const [bytesA, bytesB] = await Promise.all([fileA.arrayBuffer(), fileB.arrayBuffer()]);
     const [docA, docB] = await Promise.all([loadDocument(bytesA), loadDocument(bytesB)]);
-    const result = await compareDocuments(docA, docB);
+    const result = await compareDocuments(docA, docB, undefined, controller.signal);
     const pageCountMessage = describePageCountDifference(result.pageCount.a, result.pageCount.b);
 
     dispatch({
@@ -410,10 +421,16 @@ async function loadAndCompare(fileA: File, fileB: File): Promise<void> {
       pageCountMessage,
     });
   } catch (error) {
+    if (controller.signal.aborted) {
+      dispatch({ type: "RESET" });
+      return;
+    }
     dispatch({
       type: "LOAD_FAILED",
       message: error instanceof Error ? error.message : "Could not read one of the PDF files.",
     });
+  } finally {
+    activeCompareController = null;
   }
 }
 

@@ -213,6 +213,29 @@ input {
   font-size: 14px;
 }
 
+.cancel-btn {
+  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  background: var(--surface-1);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-size: 13px;
+  transition:
+    border-color var(--motion-ui),
+    color var(--motion-ui);
+}
+
+.cancel-btn:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.cancel-btn:active {
+  transform: translateY(1px);
+}
+
 /* Ready state: topbar + rail + stage */
 
 .app-shell {
