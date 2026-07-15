@@ -588,6 +588,61 @@ describe("main.ts DOM layer", () => {
     );
   });
 
+  it("shows an error banner when compareDocuments itself fails, not just document loading", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    vi.mocked(compareMock.compareDocuments).mockRejectedValue(new Error("Corrupt content stream"));
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    expect(document.querySelector(".banner--error")?.textContent).toBe("Corrupt content stream");
+  });
+
+  it("resetting while a page render is still in flight doesn't resurrect the ready shell", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    const renderPending = deferred<{ scale: number; width: number; height: number }>();
+    vi.mocked(pdfMock.renderPageToCanvas).mockReturnValue(renderPending.promise as never);
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 1, b: 1 },
+      pages: [
+        {
+          status: "compared",
+          pageNumber: 1,
+          ops: [],
+          additions: 0,
+          deletions: 0,
+          hasChanges: false,
+        },
+      ],
+      totals: { additions: 0, deletions: 0, pagesChanged: 0 },
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+    expect(document.querySelector(".app-shell")).not.toBeNull();
+
+    // The initial page render is still awaiting renderPageToCanvas here.
+    // Reset back to empty before it resolves.
+    document.querySelector<HTMLButtonElement>(".new-compare-btn")?.click();
+    expect(document.querySelector(".empty-shell")).not.toBeNull();
+
+    renderPending.resolve({ scale: 1, width: 100, height: 100 });
+    await flush();
+
+    expect(document.querySelector(".empty-shell")).not.toBeNull();
+    expect(document.querySelector(".app-shell")).toBeNull();
+  });
+
   it("throws if the #app root element is missing from the page", async () => {
     document.body.innerHTML = "";
     vi.resetModules();
