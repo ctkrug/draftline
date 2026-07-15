@@ -1,5 +1,7 @@
 # Draftline
 
+[![CI](https://github.com/ctkrug/draftline/actions/workflows/ci.yml/badge.svg)](https://github.com/ctkrug/draftline/actions/workflows/ci.yml)
+
 Drop in two versions of a PDF — a contract redline, a lease draft, a policy revision — and watch
 every changed clause highlight directly on the original page images. No upload, no page cap, no
 account. Everything happens in your browser.
