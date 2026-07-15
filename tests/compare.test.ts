@@ -64,6 +64,29 @@ describe("compareDocuments", () => {
 
     expect(result.pages[1]).toEqual({ status: "removed", pageNumber: 2 });
   });
+
+  it("streams each page result via onPage as it completes", async () => {
+    const bytesA = buildPdf([
+      { items: [{ text: "page one", x: 72, y: 700 }] },
+      { items: [{ text: "page two", x: 72, y: 700 }] },
+    ]);
+    const bytesB = buildPdf([
+      { items: [{ text: "page one", x: 72, y: 700 }] },
+      { items: [{ text: "page two revised", x: 72, y: 700 }] },
+    ]);
+    const [docA, docB] = await Promise.all([loadDocument(bytesA), loadDocument(bytesB)]);
+
+    const streamed: Array<{ pageNumber: number; index: number; total: number }> = [];
+    const result = await compareDocuments(docA, docB, (page, index, total) => {
+      streamed.push({ pageNumber: page.pageNumber, index, total });
+    });
+
+    expect(streamed).toEqual([
+      { pageNumber: 1, index: 0, total: 2 },
+      { pageNumber: 2, index: 1, total: 2 },
+    ]);
+    expect(result.pages).toHaveLength(2);
+  });
 });
 
 describe("describePageCountDifference", () => {
