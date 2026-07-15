@@ -175,6 +175,37 @@ describe("main.ts DOM layer", () => {
     expect(document.querySelector(".app-shell")).not.toBeNull();
     expect(document.querySelector(".stats")?.textContent).toContain("+1");
     expect(document.querySelectorAll(".page-nav-item")).toHaveLength(1);
+
+    const caption = document.querySelector(".stage-caption");
+    expect(caption?.getAttribute("aria-live")).toBe("polite");
+    expect(caption?.textContent).toBe("1 addition on this page.");
+  });
+
+  it("announces 'no changes' on a compared page with an empty diff", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+    const ops: PositionedDiffOp[] = [{ type: "equal", wordA: word("same"), wordB: word("same") }];
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 1, b: 1 },
+      pages: [
+        { status: "compared", pageNumber: 1, ops, additions: 0, deletions: 0, hasChanges: false },
+      ],
+      totals: { additions: 0, deletions: 0, pagesChanged: 0 },
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    expect(document.querySelector(".stage-caption")?.textContent).toBe("No changes on this page.");
   });
 
   it("cancelling mid-compare returns to the empty state", async () => {
