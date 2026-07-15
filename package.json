@@ -1,0 +1,21 @@
+{
+  "name": "draftline",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Client-side PDF redline diff viewer — compare two PDFs and see every changed clause highlighted over the original page images.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc -b --noEmit"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ctkrug/draftline.git"
+  }
+}
