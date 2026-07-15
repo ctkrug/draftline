@@ -277,6 +277,11 @@ function buildReadyShell(readyState: Extract<AppState, { phase: "ready" }>): HTM
 
   const caption = document.createElement("p");
   caption.className = "stage-caption";
+  // The diff overlay itself is aria-hidden (it's positioned boxes over a
+  // canvas, meaningless out of visual context) — this caption is the only
+  // per-page information assistive tech gets, so it must always say
+  // something and be announced as the reader navigates between pages.
+  caption.setAttribute("aria-live", "polite");
   stage.appendChild(caption);
 
   workspace.appendChild(stage);
@@ -344,6 +349,10 @@ async function renderCurrentPage(): Promise<void> {
     return;
   }
 
+  caption.textContent = pageResult.hasChanges
+    ? describePageChanges(pageResult.additions, pageResult.deletions)
+    : "No changes on this page.";
+
   const marks = buildOverlayMarks(pageResult.ops);
   for (const mark of marks) {
     const el = document.createElement("div");
@@ -362,6 +371,13 @@ async function renderCurrentPage(): Promise<void> {
     }
     overlayLayer.appendChild(el);
   }
+}
+
+function describePageChanges(additions: number, deletions: number): string {
+  const parts: string[] = [];
+  if (additions > 0) parts.push(`${additions} addition${additions === 1 ? "" : "s"}`);
+  if (deletions > 0) parts.push(`${deletions} deletion${deletions === 1 ? "" : "s"}`);
+  return `${parts.join(" and ")} on this page.`;
 }
 
 function canvasWrapMatchOverlaySize(
