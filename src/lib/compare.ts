@@ -21,6 +21,10 @@ export type CompareResult = {
   totals: { additions: number; deletions: number; pagesChanged: number };
 };
 
+function yieldToMainThread(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 /**
  * Diffs every page of two documents. Boxes on `PageCompareResult.ops` are in
  * each page's own scale-1 viewport space — callers rendering at a different
@@ -29,10 +33,16 @@ export type CompareResult = {
  *
  * Pages beyond the shorter document's page count are reported as "added" or
  * "removed" rather than silently dropped.
+ *
+ * Calls `onPage` as each page finishes and yields to the event loop between
+ * pages, so a long document (BACKLOG 2.3) doesn't block the main thread for
+ * its whole length — callers can render page 1 the moment it's ready instead
+ * of waiting on all of them.
  */
 export async function compareDocuments(
   docA: PDFDocumentProxy,
   docB: PDFDocumentProxy,
+  onPage?: (page: PageCompareResult, index: number, total: number) => void,
 ): Promise<CompareResult> {
   const pageCount = { a: docA.numPages, b: docB.numPages };
   const pages: PageCompareResult[] = [];
@@ -41,33 +51,35 @@ export async function compareDocuments(
   const maxPages = Math.max(pageCount.a, pageCount.b);
 
   for (let pageNumber = 1; pageNumber <= maxPages; pageNumber++) {
+    let pageResult: PageCompareResult;
+
     if (pageNumber > pageCount.a) {
-      pages.push({ status: "added", pageNumber });
+      pageResult = { status: "added", pageNumber };
       totals.pagesChanged++;
-      continue;
+    } else if (pageNumber > pageCount.b) {
+      pageResult = { status: "removed", pageNumber };
+      totals.pagesChanged++;
+    } else {
+      const [pageA, pageB] = await Promise.all([docA.getPage(pageNumber), docB.getPage(pageNumber)]);
+      const [wordsA, wordsB] = await Promise.all([
+        getPositionedWords(pageA, pageA.getViewport({ scale: 1 })),
+        getPositionedWords(pageB, pageB.getViewport({ scale: 1 })),
+      ]);
+
+      const ops = diffPositionedWords(wordsA, wordsB);
+      const additions = ops.filter((op) => op.type === "insert").length;
+      const deletions = ops.filter((op) => op.type === "delete").length;
+      const hasChanges = additions > 0 || deletions > 0;
+
+      pageResult = { status: "compared", pageNumber, ops, additions, deletions, hasChanges };
+      totals.additions += additions;
+      totals.deletions += deletions;
+      if (hasChanges) totals.pagesChanged++;
     }
 
-    if (pageNumber > pageCount.b) {
-      pages.push({ status: "removed", pageNumber });
-      totals.pagesChanged++;
-      continue;
-    }
-
-    const [pageA, pageB] = await Promise.all([docA.getPage(pageNumber), docB.getPage(pageNumber)]);
-    const [wordsA, wordsB] = await Promise.all([
-      getPositionedWords(pageA, pageA.getViewport({ scale: 1 })),
-      getPositionedWords(pageB, pageB.getViewport({ scale: 1 })),
-    ]);
-
-    const ops = diffPositionedWords(wordsA, wordsB);
-    const additions = ops.filter((op) => op.type === "insert").length;
-    const deletions = ops.filter((op) => op.type === "delete").length;
-    const hasChanges = additions > 0 || deletions > 0;
-
-    pages.push({ status: "compared", pageNumber, ops, additions, deletions, hasChanges });
-    totals.additions += additions;
-    totals.deletions += deletions;
-    if (hasChanges) totals.pagesChanged++;
+    pages.push(pageResult);
+    onPage?.(pageResult, pageNumber - 1, maxPages);
+    if (pageNumber < maxPages) await yieldToMainThread();
   }
 
   return { pageCount, pages, totals };
