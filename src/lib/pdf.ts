@@ -120,3 +120,53 @@ export async function getPositionedWords(
 
   return words;
 }
+
+/** Pure sizing math for rendering a page at a target CSS width and DPR. */
+export function computeCanvasSize(
+  unscaledWidth: number,
+  unscaledHeight: number,
+  cssWidth: number,
+  pixelRatio: number,
+) {
+  const scale = cssWidth / unscaledWidth;
+  const cssHeight = unscaledHeight * scale;
+
+  return {
+    scale,
+    cssWidth,
+    cssHeight,
+    canvasWidth: Math.round(cssWidth * pixelRatio),
+    canvasHeight: Math.round(cssHeight * pixelRatio),
+  };
+}
+
+/**
+ * Renders a PDF page onto `canvas`, sized to `cssWidth` CSS pixels wide and
+ * rendered at `pixelRatio` for crisp output on retina displays. Returns the
+ * viewport used, so `getPositionedWords` overlays line up with the bitmap.
+ */
+export async function renderPageToCanvas(
+  page: PDFPageProxy,
+  canvas: HTMLCanvasElement,
+  cssWidth: number,
+  pixelRatio = 1,
+) {
+  const unscaled = page.getViewport({ scale: 1 });
+  const size = computeCanvasSize(unscaled.width, unscaled.height, cssWidth, pixelRatio);
+  const viewport = page.getViewport({ scale: size.scale });
+
+  canvas.width = size.canvasWidth;
+  canvas.height = size.canvasHeight;
+  canvas.style.width = `${size.cssWidth}px`;
+  canvas.style.height = `${size.cssHeight}px`;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("Canvas 2D context is unavailable");
+  }
+
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  await page.render({ canvasContext: context, viewport, canvas }).promise;
+
+  return viewport;
+}
