@@ -5,6 +5,24 @@ All notable changes to this project are documented here. Format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- A rapid page-nav click (or a resize firing mid-render) could let a slower,
+  stale render finish last, leaving the canvas and diff overlay showing the
+  wrong page — guarded with a render-generation token.
+- Dropping more than two PDFs silently compared the first two and discarded
+  the rest with no indication which files were used; now reported as an error.
+- Pressing Enter/Space on the dropzone, or clicking it directly, opened the
+  file picker twice (`input.click()`'s own bubbling click event re-entered the
+  dropzone's click listener).
+- Screen readers had no way to tell what changed on the page they were
+  viewing — the diff overlay is `aria-hidden`, and the per-page caption was
+  blank whenever there was nothing else to say. It's now a live region with a
+  real per-page summary ("2 additions and 1 deletion on this page").
+- The "changed" page-nav indicator was CSS-generated content that some screen
+  readers fold into the accessible name in a confusing form; changed pages now
+  get a plain-language `aria-label` instead.
+
 ### Added
 
 - The core compare experience: drop two PDFs and see word-level diff highlights
