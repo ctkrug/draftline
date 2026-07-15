@@ -65,6 +65,22 @@ describe("compareDocuments", () => {
     expect(result.pages[1]).toEqual({ status: "removed", pageNumber: 2 });
   });
 
+  it("treats a scanned (text-free) page as an all-deletion diff against a text page", async () => {
+    const bytesA = buildPdf([{ items: [{ text: "the tenant shall pay rent", x: 72, y: 700 }] }]);
+    const bytesB = buildPdf([{ items: [] }]);
+    const [docA, docB] = await Promise.all([loadDocument(bytesA), loadDocument(bytesB)]);
+
+    const result = await compareDocuments(docA, docB);
+    const page = result.pages[0];
+
+    expect(page.status).toBe("compared");
+    if (page.status === "compared") {
+      expect(page.additions).toBe(0);
+      expect(page.deletions).toBe(5);
+      expect(page.hasChanges).toBe(true);
+    }
+  });
+
   it("streams each page result via onPage as it completes", async () => {
     const bytesA = buildPdf([
       { items: [{ text: "page one", x: 72, y: 700 }] },
