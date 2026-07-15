@@ -48,7 +48,13 @@ function buildDropzone(promptText: string): HTMLElement {
   input.setAttribute("aria-hidden", "true");
   dz.appendChild(input);
 
-  dz.addEventListener("click", () => input.click());
+  dz.addEventListener("click", (event) => {
+    // input.click() below dispatches its own bubbling click event back up
+    // through dz — without this guard that reopens the picker a second time
+    // (only masked in practice by browsers' own reentrant-click handling).
+    if (event.target === input) return;
+    input.click();
+  });
   dz.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
