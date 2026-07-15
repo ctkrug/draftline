@@ -24,19 +24,37 @@ Every existing "PDF diff" tool either uploads your files to a server (a non-star
 under NDA — leases, contracts, term sheets) or caps you at a handful of free pages before asking
 for a subscription. Draftline has neither constraint, because it doesn't need a backend at all.
 
-## Planned features
+## Features
 
 - **Drag-and-drop compare** — drop two PDFs (or pick via file input) and get a highlighted diff
   in seconds, no upload spinner.
 - **Text-layer extraction** — pull structured text + position data from each page via pdf.js.
 - **Clause-level diff** — a diff algorithm tuned for prose (word/phrase granularity, not raw
   character diffing) so a single edited word doesn't light up the whole paragraph.
-- **Overlay rendering** — paint additions/removals as highlighted regions directly on the
-  rendered page canvas, positioned using the original text's bounding boxes.
-- **Page navigation** — jump between pages that contain changes; a summary of total additions
+- **Overlay rendering** — paints additions in place over the revised page and deletions as a
+  strikethrough marker at the edit point, positioned using the original text's bounding boxes.
+- **Page navigation** — jump between pages that contain changes; a running total of additions
   and deletions.
+- **Graceful degradation** — mismatched page counts, scanned/image-only pages, and 50+ page
+  documents are all handled without crashing or freezing the page (with a cancel control for
+  long comparisons).
 - **Zero page cap, zero upload** — designed to handle full-length contracts and leases, not just
   short samples, entirely offline once loaded.
+
+## Using it
+
+```bash
+npm install
+npm run dev
+```
+
+Open the dev server URL, then drop (or pick) two PDF versions of the same document. Draftline
+renders the revised document's pages with the diff painted directly on top: green boxes over
+inserted text, red strikethrough markers where text was removed. Use the page navigator in the
+left rail to jump to any page — pages with changes are marked with a dot.
+
+Build a deployable static bundle with `npm run build` (outputs to `dist/`); preview it with
+`npm run preview`.
 
 ## Stack
 
@@ -50,8 +68,9 @@ No backend. No database. No accounts. Static site, hosted anywhere.
 
 ## Status
 
-Early scaffold — see [`docs/VISION.md`](docs/VISION.md) for the full plan and
-[`docs/BACKLOG.md`](docs/BACKLOG.md) for the build breakdown.
+Core compare experience complete — see [`docs/VISION.md`](docs/VISION.md) for the full plan,
+[`docs/BACKLOG.md`](docs/BACKLOG.md) for the story breakdown, and
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for how the pieces fit together.
 
 ## License
 
