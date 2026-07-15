@@ -581,6 +581,40 @@ describe("main.ts DOM layer", () => {
     expect(deleteMark?.textContent).toBe("− removed-clause");
   });
 
+  it("pluralizes the per-page summary for more than one addition or deletion", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+    const ops: PositionedDiffOp[] = [
+      { type: "insert", word: word("first") },
+      { type: "insert", word: word("second") },
+      { type: "delete", word: word("third") },
+      { type: "delete", word: word("fourth") },
+    ];
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 1, b: 1 },
+      pages: [
+        { status: "compared", pageNumber: 1, ops, additions: 2, deletions: 2, hasChanges: true },
+      ],
+      totals: { additions: 2, deletions: 2, pagesChanged: 1 },
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+
+    expect(document.querySelector(".stage-caption")?.textContent).toBe(
+      "2 additions and 2 deletions on this page.",
+    );
+  });
+
   it("re-renders the current page on window resize while a comparison is ready", async () => {
     const { pdfMock, compareMock } = await mountApp();
 
