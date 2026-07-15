@@ -43,4 +43,22 @@ describe("validateDroppedFiles", () => {
       message: "No files were dropped.",
     });
   });
+
+  it("reports invalid, naming the count, when more than two PDFs are dropped", () => {
+    const files = [pdfFile("a.pdf"), pdfFile("b.pdf"), pdfFile("c.pdf")];
+    expect(validateDroppedFiles(files)).toEqual({
+      status: "invalid",
+      message: "Drop exactly two PDFs to compare — 3 were dropped.",
+    });
+  });
+
+  it("accepts the same File dropped twice without special-casing it", () => {
+    const fileA = pdfFile("original.pdf");
+    expect(validateDroppedFiles([fileA, fileA])).toEqual({ status: "ok", fileA, fileB: fileA });
+  });
+
+  it("accepts an uppercase .PDF extension when the MIME type is missing", () => {
+    const file = pdfFile("LEASE.PDF", "");
+    expect(isPdfFile(file)).toBe(true);
+  });
 });
