@@ -26,5 +26,12 @@ export function validateDroppedFiles(files: File[]): DroppedFilesResult {
     return { status: "need-second-file", fileA: files[0] };
   }
 
+  if (files.length > 2) {
+    return {
+      status: "invalid",
+      message: `Drop exactly two PDFs to compare — ${files.length} were dropped.`,
+    };
+  }
+
   return { status: "ok", fileA: files[0], fileB: files[1] };
 }
