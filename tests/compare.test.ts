@@ -87,6 +87,31 @@ describe("compareDocuments", () => {
     ]);
     expect(result.pages).toHaveLength(2);
   });
+
+  it("stops before the next page once the signal is aborted", async () => {
+    const bytesA = buildPdf([
+      { items: [{ text: "page one", x: 72, y: 700 }] },
+      { items: [{ text: "page two", x: 72, y: 700 }] },
+      { items: [{ text: "page three", x: 72, y: 700 }] },
+    ]);
+    const [docA, docB] = await Promise.all([loadDocument(bytesA), loadDocument(bytesA)]);
+
+    const controller = new AbortController();
+    const seenPages: number[] = [];
+
+    const compare = compareDocuments(
+      docA,
+      docB,
+      (page) => {
+        seenPages.push(page.pageNumber);
+        if (page.pageNumber === 1) controller.abort();
+      },
+      controller.signal,
+    );
+
+    await expect(compare).rejects.toThrow();
+    expect(seenPages).toEqual([1]);
+  });
 });
 
 describe("describePageCountDifference", () => {
