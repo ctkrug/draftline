@@ -28,9 +28,7 @@ describe("extractPages", () => {
   });
 
   it("keeps literal parentheses in extracted text, a common clause pattern", async () => {
-    const bytes = buildPdf([
-      { items: [{ text: `the Tenant (as defined below)`, x: 72, y: 700 }] },
-    ]);
+    const bytes = buildPdf([{ items: [{ text: `the Tenant (as defined below)`, x: 72, y: 700 }] }]);
 
     const pages = await extractPages(bytes);
 

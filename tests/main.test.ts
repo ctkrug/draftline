@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { PositionedDiffOp } from "../src/lib/positioned-diff";
 import type { PositionedWord } from "../src/lib/pdf";
 import type { CompareResult } from "../src/lib/compare";
@@ -157,7 +157,9 @@ describe("main.ts DOM layer", () => {
     const ops: PositionedDiffOp[] = [{ type: "insert", word: word("added") }];
     const result: CompareResult = {
       pageCount: { a: 1, b: 1 },
-      pages: [{ status: "compared", pageNumber: 1, ops, additions: 1, deletions: 0, hasChanges: true }],
+      pages: [
+        { status: "compared", pageNumber: 1, ops, additions: 1, deletions: 0, hasChanges: true },
+      ],
       totals: { additions: 1, deletions: 0, pagesChanged: 1 },
     };
     vi.mocked(compareMock.compareDocuments).mockResolvedValue(result);
@@ -218,7 +220,16 @@ describe("main.ts DOM layer", () => {
     } as never);
     vi.mocked(compareMock.compareDocuments).mockResolvedValue({
       pageCount: { a: 1, b: 1 },
-      pages: [{ status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false }],
+      pages: [
+        {
+          status: "compared",
+          pageNumber: 1,
+          ops: [],
+          additions: 0,
+          deletions: 0,
+          hasChanges: false,
+        },
+      ],
       totals: { additions: 0, deletions: 0, pagesChanged: 0 },
     });
 
@@ -245,14 +256,37 @@ describe("main.ts DOM layer", () => {
     vi.mocked(compareMock.compareDocuments).mockResolvedValue({
       pageCount: { a: 3, b: 3 },
       pages: [
-        { status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false },
-        { status: "compared", pageNumber: 2, ops: page2Ops, additions: 1, deletions: 0, hasChanges: true },
-        { status: "compared", pageNumber: 3, ops: page3Ops, additions: 1, deletions: 0, hasChanges: true },
+        {
+          status: "compared",
+          pageNumber: 1,
+          ops: [],
+          additions: 0,
+          deletions: 0,
+          hasChanges: false,
+        },
+        {
+          status: "compared",
+          pageNumber: 2,
+          ops: page2Ops,
+          additions: 1,
+          deletions: 0,
+          hasChanges: true,
+        },
+        {
+          status: "compared",
+          pageNumber: 3,
+          ops: page3Ops,
+          additions: 1,
+          deletions: 0,
+          hasChanges: true,
+        },
       ],
       totals: { additions: 2, deletions: 0, pagesChanged: 2 },
     });
 
-    const renderDeferreds: Array<ReturnType<typeof deferred<{ scale: number; width: number; height: number }>>> = [];
+    const renderDeferreds: Array<
+      ReturnType<typeof deferred<{ scale: number; width: number; height: number }>>
+    > = [];
     vi.mocked(pdfMock.renderPageToCanvas).mockImplementation(() => {
       const next = deferred<{ scale: number; width: number; height: number }>();
       renderDeferreds.push(next);
@@ -269,7 +303,8 @@ describe("main.ts DOM layer", () => {
     renderDeferreds[0]?.resolve({ scale: 1, width: 100, height: 100 });
     await flush();
 
-    const [, page2Button, page3Button] = document.querySelectorAll<HTMLButtonElement>(".page-nav-item");
+    const [, page2Button, page3Button] =
+      document.querySelectorAll<HTMLButtonElement>(".page-nav-item");
 
     page2Button.click();
     await flush();
@@ -347,7 +382,14 @@ describe("main.ts DOM layer", () => {
     vi.mocked(compareMock.compareDocuments).mockResolvedValue({
       pageCount: { a: 1, b: 2 },
       pages: [
-        { status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false },
+        {
+          status: "compared",
+          pageNumber: 1,
+          ops: [],
+          additions: 0,
+          deletions: 0,
+          hasChanges: false,
+        },
         { status: "added", pageNumber: 2 },
       ],
       totals: { additions: 0, deletions: 0, pagesChanged: 1 },
@@ -380,7 +422,14 @@ describe("main.ts DOM layer", () => {
     vi.mocked(compareMock.compareDocuments).mockResolvedValue({
       pageCount: { a: 2, b: 1 },
       pages: [
-        { status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false },
+        {
+          status: "compared",
+          pageNumber: 1,
+          ops: [],
+          additions: 0,
+          deletions: 0,
+          hasChanges: false,
+        },
         { status: "removed", pageNumber: 2 },
       ],
       totals: { additions: 0, deletions: 0, pagesChanged: 1 },
@@ -398,9 +447,9 @@ describe("main.ts DOM layer", () => {
     expect(document.querySelector(".stage-caption")?.textContent).toBe(
       "This page was removed from the revised document.",
     );
-    expect(document.querySelector(".overlay-layer")?.classList.contains("overlay-layer--removed")).toBe(
-      true,
-    );
+    expect(
+      document.querySelector(".overlay-layer")?.classList.contains("overlay-layer--removed"),
+    ).toBe(true);
   });
 
   it("renders a grouped delete mark alongside insert marks on a compared page", async () => {
@@ -415,7 +464,9 @@ describe("main.ts DOM layer", () => {
     const ops: PositionedDiffOp[] = [{ type: "delete", word: word("removed-clause") }];
     vi.mocked(compareMock.compareDocuments).mockResolvedValue({
       pageCount: { a: 1, b: 1 },
-      pages: [{ status: "compared", pageNumber: 1, ops, additions: 0, deletions: 1, hasChanges: true }],
+      pages: [
+        { status: "compared", pageNumber: 1, ops, additions: 0, deletions: 1, hasChanges: true },
+      ],
       totals: { additions: 0, deletions: 1, pagesChanged: 1 },
     });
 
@@ -440,7 +491,16 @@ describe("main.ts DOM layer", () => {
     } as never);
     vi.mocked(compareMock.compareDocuments).mockResolvedValue({
       pageCount: { a: 1, b: 1 },
-      pages: [{ status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false }],
+      pages: [
+        {
+          status: "compared",
+          pageNumber: 1,
+          ops: [],
+          additions: 0,
+          deletions: 0,
+          hasChanges: false,
+        },
+      ],
       totals: { additions: 0, deletions: 0, pagesChanged: 0 },
     });
 
