@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { computeCanvasSize } from "../src/lib/pdf";
+import { computeCanvasSize, renderPageToCanvas } from "../src/lib/pdf";
+import type { PDFPageProxy, PageViewport } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 describe("computeCanvasSize", () => {
   it("scales height proportionally to the target CSS width", () => {
@@ -22,5 +23,21 @@ describe("computeCanvasSize", () => {
 
     expect(size.canvasWidth).toBe(0);
     expect(size.canvasHeight).toBe(0);
+  });
+});
+
+describe("renderPageToCanvas", () => {
+  it("throws a clear error when the canvas has no 2D context available", async () => {
+    // jsdom has no canvas backend installed, so getContext("2d") returns
+    // null here exactly as it would for an exhausted/unsupported context in
+    // a real browser — this exercises that guard for real.
+    const fakePage = {
+      getViewport: () => ({ width: 612, height: 792, scale: 1 }) as PageViewport,
+    } as unknown as PDFPageProxy;
+    const canvas = document.createElement("canvas");
+
+    await expect(renderPageToCanvas(fakePage, canvas, 306, 1)).rejects.toThrow(
+      "Canvas 2D context is unavailable",
+    );
   });
 });
