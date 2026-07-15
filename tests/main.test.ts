@@ -1,0 +1,255 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { PositionedDiffOp } from "../src/lib/positioned-diff";
+import type { PositionedWord } from "../src/lib/pdf";
+import type { CompareResult } from "../src/lib/compare";
+
+// main.ts is the DOM layer: it wires drag/drop + file input to the pure
+// appReducer/compareDocuments/getPositionedWords logic (all covered by their
+// own unit tests elsewhere). Here we mock the pdf.js/canvas boundary
+// (./lib/pdf's loadDocument/renderPageToCanvas and ./lib/compare's
+// compareDocuments) so the DOM orchestration itself — state transitions,
+// drop/cancel/reset handling, and render sequencing — is testable under
+// jsdom without a real canvas 2D context or PDF bytes.
+vi.mock("../src/lib/pdf", () => ({
+  loadDocument: vi.fn(),
+  renderPageToCanvas: vi.fn(),
+}));
+vi.mock("../src/lib/compare", () => ({
+  compareDocuments: vi.fn(),
+  describePageCountDifference: vi.fn(() => null),
+}));
+
+function pdfFile(name: string): File {
+  return new File(["%PDF-1.4"], name, { type: "application/pdf" });
+}
+
+function word(text: string): PositionedWord {
+  return { text, x: 0, y: 0, width: 10, height: 12 };
+}
+
+function dispatchDrop(target: Element, files: File[]): void {
+  const event = new Event("drop", { bubbles: true, cancelable: true });
+  Object.defineProperty(event, "dataTransfer", { value: { files } });
+  target.dispatchEvent(event);
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => (resolve = res));
+  return { promise, resolve };
+}
+
+async function flush(): Promise<void> {
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  for (let i = 0; i < 5; i++) await Promise.resolve();
+}
+
+/** Fresh module graph per test: resetModules + re-import both the mocked
+ * boundary modules (so we hold the same mock instances main.ts imports)
+ * and main.ts itself, against a brand-new #app root. */
+async function mountApp() {
+  document.body.innerHTML = '<div id="app"></div>';
+  vi.resetModules();
+  const pdfMock = await import("../src/lib/pdf");
+  const compareMock = await import("../src/lib/compare");
+  await import("../src/main");
+  return { pdfMock, compareMock };
+}
+
+function fakeDoc(numPages: number, pageTag: string) {
+  return {
+    numPages,
+    getPage: vi.fn((n: number) => Promise.resolve({ __tag: pageTag, __pageNumber: n })),
+  };
+}
+
+describe("main.ts DOM layer", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("renders the empty state with a dropzone on load", async () => {
+    await mountApp();
+
+    expect(document.querySelector(".empty-shell")).not.toBeNull();
+    expect(document.querySelector(".dropzone")).not.toBeNull();
+    expect(document.querySelector(".wordmark")).not.toBeNull();
+  });
+
+  it("prompts for a second file when only one PDF is dropped", async () => {
+    await mountApp();
+
+    const dropzone = document.querySelector(".dropzone");
+    if (!dropzone) throw new Error("dropzone missing");
+    dispatchDrop(dropzone, [pdfFile("original.pdf")]);
+
+    const banner = document.querySelector(".banner--info");
+    expect(banner?.textContent).toContain("original.pdf");
+    expect(document.querySelector(".dropzone")).not.toBeNull();
+  });
+
+  it("shows a named error banner for a non-PDF file dropped as the second file", async () => {
+    await mountApp();
+
+    const dropzone = document.querySelector(".dropzone");
+    if (!dropzone) throw new Error("dropzone missing");
+    dispatchDrop(dropzone, [pdfFile("original.pdf")]);
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      new File(["hi"], "notes.txt", { type: "text/plain" }),
+    ]);
+
+    const banner = document.querySelector(".banner--error");
+    expect(banner?.textContent).toContain("notes.txt");
+  });
+
+  it("loads and compares two valid PDFs, rendering the ready shell", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    const docA = fakeDoc(1, "A");
+    const docB = fakeDoc(1, "B");
+    vi.mocked(pdfMock.loadDocument).mockResolvedValueOnce(docA as never);
+    vi.mocked(pdfMock.loadDocument).mockResolvedValueOnce(docB as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+
+    const ops: PositionedDiffOp[] = [{ type: "insert", word: word("added") }];
+    const result: CompareResult = {
+      pageCount: { a: 1, b: 1 },
+      pages: [{ status: "compared", pageNumber: 1, ops, additions: 1, deletions: 0, hasChanges: true }],
+      totals: { additions: 1, deletions: 0, pagesChanged: 1 },
+    };
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue(result);
+
+    const dropzone = document.querySelector(".dropzone");
+    if (!dropzone) throw new Error("dropzone missing");
+    dispatchDrop(dropzone, [pdfFile("original.pdf"), pdfFile("revised.pdf")]);
+
+    expect(document.querySelector(".loading")).not.toBeNull();
+
+    await flush();
+
+    expect(document.querySelector(".app-shell")).not.toBeNull();
+    expect(document.querySelector(".stats")?.textContent).toContain("+1");
+    expect(document.querySelectorAll(".page-nav-item")).toHaveLength(1);
+  });
+
+  it("cancelling mid-compare returns to the empty state", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    const pending = deferred<CompareResult>();
+    vi.mocked(compareMock.compareDocuments).mockImplementation((_a, _b, _onPage, signal) => {
+      return pending.promise.then((value) => {
+        signal?.throwIfAborted();
+        return value;
+      });
+    });
+
+    const dropzone = document.querySelector(".dropzone");
+    if (!dropzone) throw new Error("dropzone missing");
+    dispatchDrop(dropzone, [pdfFile("original.pdf"), pdfFile("revised.pdf")]);
+    await flush();
+
+    const cancelButton = document.querySelector<HTMLButtonElement>(".cancel-btn");
+    expect(cancelButton).not.toBeNull();
+    cancelButton?.click();
+
+    pending.resolve({
+      pageCount: { a: 1, b: 1 },
+      pages: [],
+      totals: { additions: 0, deletions: 0, pagesChanged: 0 },
+    });
+    await flush();
+
+    expect(document.querySelector(".empty-shell")).not.toBeNull();
+    expect(document.querySelector(".banner--error")).toBeNull();
+  });
+
+  it("resets to the empty state via the new-comparison button", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(1, "A") as never);
+    vi.mocked(pdfMock.renderPageToCanvas).mockResolvedValue({
+      scale: 1,
+      width: 100,
+      height: 100,
+    } as never);
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 1, b: 1 },
+      pages: [{ status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false }],
+      totals: { additions: 0, deletions: 0, pagesChanged: 0 },
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+    expect(document.querySelector(".app-shell")).not.toBeNull();
+
+    document.querySelector<HTMLButtonElement>(".new-compare-btn")?.click();
+
+    expect(document.querySelector(".empty-shell")).not.toBeNull();
+    expect(document.querySelector(".dropzone")).not.toBeNull();
+  });
+
+  it("resolves to the last-clicked page when a stale page-nav render finishes after a newer one", async () => {
+    const { pdfMock, compareMock } = await mountApp();
+
+    vi.mocked(pdfMock.loadDocument).mockResolvedValue(fakeDoc(2, "doc") as never);
+
+    const page2Ops: PositionedDiffOp[] = [{ type: "insert", word: word("page-two-mark") }];
+    const page3Ops: PositionedDiffOp[] = [{ type: "insert", word: word("page-three-mark") }];
+    vi.mocked(compareMock.compareDocuments).mockResolvedValue({
+      pageCount: { a: 3, b: 3 },
+      pages: [
+        { status: "compared", pageNumber: 1, ops: [], additions: 0, deletions: 0, hasChanges: false },
+        { status: "compared", pageNumber: 2, ops: page2Ops, additions: 1, deletions: 0, hasChanges: true },
+        { status: "compared", pageNumber: 3, ops: page3Ops, additions: 1, deletions: 0, hasChanges: true },
+      ],
+      totals: { additions: 2, deletions: 0, pagesChanged: 2 },
+    });
+
+    const renderDeferreds: Array<ReturnType<typeof deferred<{ scale: number; width: number; height: number }>>> = [];
+    vi.mocked(pdfMock.renderPageToCanvas).mockImplementation(() => {
+      const next = deferred<{ scale: number; width: number; height: number }>();
+      renderDeferreds.push(next);
+      return next.promise as never;
+    });
+
+    dispatchDrop(document.querySelector(".dropzone")!, [
+      pdfFile("original.pdf"),
+      pdfFile("revised.pdf"),
+    ]);
+    await flush();
+    // The initial render of page 1 (empty page, no ops) consumes the first
+    // renderPageToCanvas call; resolve it so it doesn't linger.
+    renderDeferreds[0]?.resolve({ scale: 1, width: 100, height: 100 });
+    await flush();
+
+    const [, page2Button, page3Button] = document.querySelectorAll<HTMLButtonElement>(".page-nav-item");
+
+    page2Button.click();
+    await flush();
+    page3Button.click();
+    await flush();
+
+    // Two renders are now in flight: page 2's (started first) and page 3's
+    // (started second, so it holds the current generation). Resolve page 3's
+    // render before page 2's, simulating page 3's render winning the race.
+    const page3Render = renderDeferreds[renderDeferreds.length - 1];
+    const page2Render = renderDeferreds[renderDeferreds.length - 2];
+    page3Render.resolve({ scale: 1, width: 100, height: 100 });
+    await flush();
+    page2Render.resolve({ scale: 1, width: 100, height: 100 });
+    await flush();
+
+    const marks = document.querySelectorAll(".overlay-layer .mark");
+    expect(marks).toHaveLength(1);
+    expect(document.querySelector(".page-nav-item--active")?.textContent).toBe("Page 3");
+  });
+});
