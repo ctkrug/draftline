@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" role="img" aria-label="A contract paragraph with Draftline's diff overlay: the new rent amount 2,400 dollars highlighted in green, the old amount 2,200 dollars shown struck through in red.">
+  <rect width="640" height="420" fill="#f4f2ec"/>
+
+  <!-- page with a single offset shadow, per the design tokens -->
+  <rect x="88" y="52" width="464" height="320" fill="#17171a" opacity="0.08"/>
+  <rect x="80" y="44" width="464" height="320" fill="#ffffff" stroke="#c9c6b8" stroke-width="1"/>
+
+  <!-- wordmark with the struck-rule motif -->
+  <text x="104" y="90" font-family="Georgia, 'Times New Roman', serif" font-weight="600" font-size="22" fill="#17171a">Draftline</text>
+  <rect x="150" y="82" width="42" height="3" fill="#c0242c"/>
+  <line x1="104" y1="106" x2="520" y2="106" stroke="#c9c6b8" stroke-width="1"/>
+
+  <!-- body text -->
+  <g font-family="'SF Mono', ui-monospace, Consolas, monospace" font-size="15" fill="#17171a">
+    <text x="104" y="152">The Tenant shall pay rent monthly, in the</text>
+
+    <!-- inserted amount: green highlight -->
+    <rect x="171" y="176" width="66" height="22" rx="2" fill="rgb(31 122 77 / 14%)" stroke="#1f7a4d" stroke-width="1"/>
+    <text x="104" y="192">amount of</text>
+    <text x="178" y="192">$2,400</text>
+    <text x="242" y="192">per calendar</text>
+
+    <!-- deletion marker: struck old amount anchored at the edit point -->
+    <rect x="171" y="150" width="72" height="19" rx="2" fill="#ffffff" stroke="#c0242c" stroke-width="1"/>
+    <text x="180" y="164" font-size="12" fill="#c0242c" text-decoration="line-through">&#8722; $2,200</text>
+
+    <text x="104" y="232">month, without demand, deduction, or</text>
+    <text x="104" y="272">offset of any kind.</text>
+  </g>
+
+  <text x="104" y="342" font-family="'SF Mono', ui-monospace, Consolas, monospace" font-size="12" fill="#5c5b54">Page 1 · 1 addition and 1 deletion on this page</text>
+</svg>
