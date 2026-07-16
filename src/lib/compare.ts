@@ -93,15 +93,19 @@ export async function compareDocuments(
   return { pageCount, pages, totals };
 }
 
-/** A human-readable banner for a page-count mismatch, or null if counts match. */
+/**
+ * A human-readable banner for a page-count mismatch, or null if counts
+ * match. Document A is the original, B the revised, matching the file
+ * labels the UI shows so the banner speaks the same language as the rail.
+ */
 export function describePageCountDifference(pageCountA: number, pageCountB: number): string | null {
   if (pageCountA === pageCountB) return null;
 
   const [longer, shorter, diff] =
     pageCountB > pageCountA
-      ? (["B", "A", pageCountB - pageCountA] as const)
-      : (["A", "B", pageCountA - pageCountB] as const);
+      ? (["revised", "original", pageCountB - pageCountA] as const)
+      : (["original", "revised", pageCountA - pageCountB] as const);
 
   const pageWord = diff === 1 ? "page" : "pages";
-  return `Document ${longer} has ${diff} more ${pageWord} than Document ${shorter}`;
+  return `The ${longer} document has ${diff} more ${pageWord} than the ${shorter}`;
 }

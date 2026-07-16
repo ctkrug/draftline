@@ -135,15 +135,21 @@ describe("describePageCountDifference", () => {
     expect(describePageCountDifference(5, 5)).toBeNull();
   });
 
-  it("describes document B having more pages", () => {
-    expect(describePageCountDifference(2, 5)).toBe("Document B has 3 more pages than Document A");
+  it("describes the revised document having more pages", () => {
+    expect(describePageCountDifference(2, 5)).toBe(
+      "The revised document has 3 more pages than the original",
+    );
   });
 
-  it("describes document A having more pages", () => {
-    expect(describePageCountDifference(5, 2)).toBe("Document A has 3 more pages than Document B");
+  it("describes the original document having more pages", () => {
+    expect(describePageCountDifference(5, 2)).toBe(
+      "The original document has 3 more pages than the revised",
+    );
   });
 
   it("uses singular 'page' for a one-page difference", () => {
-    expect(describePageCountDifference(4, 5)).toBe("Document B has 1 more page than Document A");
+    expect(describePageCountDifference(4, 5)).toBe(
+      "The revised document has 1 more page than the original",
+    );
   });
 });
