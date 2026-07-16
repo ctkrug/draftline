@@ -37,9 +37,9 @@ Rendered page + diff overlay, page navigator, summary strip
 ## Modules (`src/lib/`)
 
 - **`pdf.ts`** — pdf.js wrapper (legacy build, so it also runs under jsdom
-  in tests). `loadDocument`, `extractPages` (plain text per page),
-  `getPositionedWords` (viewport-space word boxes), `renderPageToCanvas` +
-  `computeCanvasSize` (crisp canvas sizing at any devicePixelRatio).
+  in tests). `loadDocument`, `getPositionedWords` (viewport-space word
+  boxes), `renderPageToCanvas` + `computeCanvasSize` (crisp canvas sizing
+  at any devicePixelRatio).
 - **`positioned-diff.ts`** — `diffPositionedWords`: word-level LCS diff over
   positioned tokens. Never merges adjacent ops, so a changed clause spanning
   a line break still yields two distinct on-page boxes.
