@@ -92,9 +92,15 @@ function buildEmptyState(): HTMLElement {
   const copy = document.createElement("p");
   copy.className = "empty-copy";
   copy.innerHTML =
-    "Your files never leave this browser — nothing is uploaded, ever." +
+    "Your files never leave this browser. Nothing is uploaded, ever." +
     "<br />Compare two drafts of a contract or lease and see exactly what changed.";
   container.appendChild(copy);
+
+  const source = document.createElement("p");
+  source.className = "empty-source";
+  source.innerHTML =
+    'Free and open source. <a href="https://github.com/ctkrug/draftline">View it on GitHub</a>.';
+  container.appendChild(source);
 
   return container;
 }
@@ -385,11 +391,7 @@ function describePageChanges(additions: number, deletions: number): string {
   return `${parts.join(" and ")} on this page.`;
 }
 
-function sizeOverlayLayer(
-  overlayLayer: HTMLDivElement,
-  width: number,
-  height: number,
-): void {
+function sizeOverlayLayer(overlayLayer: HTMLDivElement, width: number, height: number): void {
   overlayLayer.style.width = `${width}px`;
   overlayLayer.style.height = `${height}px`;
 }

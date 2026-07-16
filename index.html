@@ -3,11 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Draftline — compare PDFs, see every changed clause</title>
+    <title>Draftline: Compare two PDF files online, no upload</title>
     <meta
       name="description"
-      content="Drop in two versions of a PDF and see every changed clause highlighted directly over the original page images. Entirely client-side, no upload, no page cap."
+      content="Compare two PDF files online, free and with no upload. Draftline highlights every added and deleted clause on the page, entirely in your browser."
     />
+    <meta property="og:title" content="Draftline: Compare two PDF files online, no upload" />
+    <meta
+      property="og:description"
+      content="Compare two PDF files online, free and with no upload. Draftline highlights every added and deleted clause on the page, entirely in your browser."
+    />
+    <meta property="og:type" content="website" />
     <meta name="theme-color" content="#f4f2ec" />
     <link
       rel="icon"
@@ -24,6 +30,84 @@
   </head>
   <body>
     <div id="app"></div>
+
+    <section class="about" aria-label="About Draftline">
+      <div class="about-inner">
+        <h2>Compare two PDF files online, free and without uploading anything</h2>
+        <p>
+          Draftline is a free tool for comparing two PDF files online. Drop in the old version and
+          the new one, and it marks every added and deleted word right on the revised page: green
+          where text was inserted, a red strikethrough marker where text was removed. It works with
+          contracts, leases, statements of work, policy documents, or any two drafts of the same
+          PDF.
+        </p>
+        <p>
+          Most PDF comparison tools upload your files to a server before they can diff them.
+          Draftline does not. It is a PDF diff tool with no upload step at all: both files are read
+          and compared inside your browser using pdf.js, the same engine Firefox uses to display
+          PDFs. Nothing is sent over the network, so you can safely compare an NDA, a signed lease,
+          or a term sheet you would never paste into a website.
+        </p>
+        <p>
+          The result reads like a redline a careful reviewer would mark by hand. Instead of dumping
+          plain text into two columns, Draftline paints the diff over the real rendered page, so a
+          reworded clause, a changed dollar amount, or a renumbered section shows up in its actual
+          layout. There is no page limit and no account, so a sixty-page lease compares as easily as
+          a one-page letter.
+        </p>
+
+        <h3>Frequently asked questions</h3>
+        <dl class="faq">
+          <dt>How do I compare two PDF files online for free?</dt>
+          <dd>
+            Open Draftline, drop or choose the two PDF versions you want to compare, and it
+            highlights every change on the page. It is free, there is no sign-up, and there is no
+            limit on how many documents you compare.
+          </dd>
+
+          <dt>Is there a PDF diff tool that works with no upload?</dt>
+          <dd>
+            Yes. Draftline compares both PDFs entirely in your browser with pdf.js, so neither file
+            is uploaded to a server. Once the page has loaded you can even go offline and the
+            comparison still works.
+          </dd>
+
+          <dt>Can I redline and compare two contract PDFs?</dt>
+          <dd>
+            That is what Draftline is built for. It runs a word-level diff, so a single edited term
+            like a changed rent amount or deadline is marked precisely instead of flagging the whole
+            paragraph, and the marks sit over the original contract layout.
+          </dd>
+
+          <dt>Is there a page limit?</dt>
+          <dd>
+            No. Because there is no server doing the work, there is nothing to ration. Long
+            documents stream in one page at a time with a Cancel button, so the tab stays
+            responsive.
+          </dd>
+
+          <dt>What happens with scanned PDFs?</dt>
+          <dd>
+            Draftline compares the text layer of each PDF. A scanned or image-only page has no text
+            layer, so it is shown with a note rather than a silent empty comparison. For a
+            meaningful diff, both files need selectable text.
+          </dd>
+        </dl>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="site-footer-inner">
+        <span class="site-footer-mark">Draftline</span>
+        <nav>
+          <a href="https://github.com/ctkrug/draftline">View source on GitHub</a>
+          <a href="https://apps.charliekrug.com"
+            >More by Charlie Krug &rarr; apps.charliekrug.com</a
+          >
+        </nav>
+      </div>
+    </footer>
+
     <script type="module" src="./src/main.ts"></script>
   </body>
 </html>

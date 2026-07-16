@@ -103,6 +103,13 @@ describe("main.ts DOM layer", () => {
     expect(document.querySelector(".wordmark")).not.toBeNull();
   });
 
+  it("links to the source repo from the empty state", async () => {
+    await mountApp();
+
+    const link = document.querySelector<HTMLAnchorElement>(".empty-source a");
+    expect(link?.getAttribute("href")).toBe("https://github.com/ctkrug/draftline");
+  });
+
   it("prompts for a second file when only one PDF is dropped", async () => {
     await mountApp();
 
