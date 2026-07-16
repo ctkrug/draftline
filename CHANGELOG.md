@@ -3,7 +3,27 @@
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.0.0] - 2026-07-16
+
+### Changed
+
+- The page-count mismatch banner now says "the revised document" / "the
+  original document" instead of "Document A" / "Document B", matching the
+  file labels shown in the rail.
+- `npm run build` now outputs to `site/` (the published directory) rather
+  than `dist/`.
+
+### Removed
+
+- The unused plain-text diff engine (`src/lib/diff.ts`) and the unused
+  `extractPages` text extractor. The app diffs positioned words through
+  `diffPositionedWords`, which is now the single diff path.
+
+### Added
+
+- Landing/SEO copy and a five-question FAQ below the tool, plus a footer
+  linking the source and the wider portfolio, and page metadata (title,
+  description, OG tags).
 
 ### Fixed
 
@@ -42,6 +62,6 @@ All notable changes to this project are documented here. Format follows
 - A generated favicon and a struck-rule wordmark motif.
 - `docs/ARCHITECTURE.md` mapping the codebase's data flow and modules.
 - Project scaffold: TypeScript + Vite + pdf.js, with a word-level LCS diff engine
-  (`src/lib/diff.ts`) and a pdf.js text-extraction wrapper (`src/lib/pdf.ts`).
+  (`src/lib/positioned-diff.ts`) and a pdf.js text-extraction wrapper (`src/lib/pdf.ts`).
 - CI workflow running typecheck, lint, tests, and build on every push/PR.
 - `docs/VISION.md`, `docs/DESIGN.md`, and `docs/BACKLOG.md` planning documents.
