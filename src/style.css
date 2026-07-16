@@ -565,12 +565,12 @@ a:hover {
   gap: var(--space-4);
 }
 
-.about h2 {
+.about h1 {
   font-size: 28px;
   line-height: 1.15;
 }
 
-.about h3 {
+.about h2 {
   font-size: 18px;
   margin-top: var(--space-5);
 }
