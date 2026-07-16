@@ -40,12 +40,10 @@ Rendered page + diff overlay, page navigator, summary strip
   in tests). `loadDocument`, `getPositionedWords` (viewport-space word
   boxes), `renderPageToCanvas` + `computeCanvasSize` (crisp canvas sizing
   at any devicePixelRatio).
-- **`positioned-diff.ts`** — `diffPositionedWords`: word-level LCS diff over
-  positioned tokens. Never merges adjacent ops, so a changed clause spanning
-  a line break still yields two distinct on-page boxes.
-- **`diff.ts`** — the original plain-text `diffWords`/`tokenize` (used
-  nowhere yet at runtime beyond its own tests; kept as the simplest
-  building block and reference implementation for the LCS approach).
+- **`positioned-diff.ts`** — `diffPositionedWords`: the word-level LCS diff
+  over positioned tokens that the app runs. Never merges adjacent ops, so a
+  changed clause spanning a line break still yields two distinct on-page
+  boxes.
 - **`overlay.ts`** — `buildOverlayMarks`: turns diff ops into renderable
   marks against the revised page (insertions get their real box; deletions
   are grouped and anchored at the edit point, since removed text has no

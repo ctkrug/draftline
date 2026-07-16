@@ -30,8 +30,9 @@ Draftline runs the entire comparison in the browser:
 1. Both PDFs are parsed locally with pdf.js — nothing is uploaded, ever.
 2. pdf.js's text layer gives structured text + bounding-box position data for every word on every
    page.
-3. A word-level diff (see `src/lib/diff.ts`) compares the two documents' text, isolating exactly
-   which words changed rather than flagging whole paragraphs.
+3. A word-level LCS diff over the positioned tokens (see `src/lib/positioned-diff.ts`) compares
+   the two documents' text, isolating exactly which words changed rather than flagging whole
+   paragraphs.
 4. The original page is rendered as a canvas image (via pdf.js), and the diff result is painted
    as highlighted overlays positioned using the original text's bounding boxes — so the user sees
    the change _in place_, in the document's real layout, not as a plain-text dump.

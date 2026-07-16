@@ -12,8 +12,8 @@ export type PositionedDiffOp =
  * break: two words on different lines stay two separate ops with two
  * separate boxes instead of collapsing into one incorrect span.
  *
- * Matching is by word text only, mirroring diffWords' LCS approach — the
- * position is metadata carried alongside the match, not part of it.
+ * Matching is by word text only, in the classic LCS fashion — the position
+ * is metadata carried alongside the match, not part of it.
  */
 export function diffPositionedWords(a: PositionedWord[], b: PositionedWord[]): PositionedDiffOp[] {
   const lengths: number[][] = Array.from({ length: a.length + 1 }, () =>
