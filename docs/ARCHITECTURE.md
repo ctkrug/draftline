@@ -101,7 +101,7 @@ via a real browser (Playwright) rather than jsdom.
 
 ## Build
 
-`npm run build` runs `tsc -b && vite build` into `dist/`. `vite.config.ts`
+`npm run build` runs `tsc -b && vite build` into `site/`. `vite.config.ts`
 sets `base: "./"` so every asset path is relative — the build is
 deployable from any subpath (e.g. `apps.charliekrug.com/draftline/`),
 not just a domain root.
