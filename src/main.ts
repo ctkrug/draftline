@@ -326,7 +326,7 @@ async function renderCurrentPage(): Promise<void> {
     if (generation !== renderGeneration) return;
     const viewport = await renderPageToCanvas(page, canvas, cssWidth, pixelRatio);
     if (generation !== renderGeneration) return;
-    canvasWrapMatchOverlaySize(overlayLayer, viewport.width, viewport.height);
+    sizeOverlayLayer(overlayLayer, viewport.width, viewport.height);
     overlayLayer.classList.add("overlay-layer--removed");
     caption.textContent = "This page was removed from the revised document.";
     return;
@@ -337,7 +337,7 @@ async function renderCurrentPage(): Promise<void> {
     if (generation !== renderGeneration) return;
     const viewport = await renderPageToCanvas(page, canvas, cssWidth, pixelRatio);
     if (generation !== renderGeneration) return;
-    canvasWrapMatchOverlaySize(overlayLayer, viewport.width, viewport.height);
+    sizeOverlayLayer(overlayLayer, viewport.width, viewport.height);
     overlayLayer.classList.add("overlay-layer--added");
     caption.textContent = "This page was added in the revised document.";
     return;
@@ -347,7 +347,7 @@ async function renderCurrentPage(): Promise<void> {
   if (generation !== renderGeneration) return;
   const viewport = await renderPageToCanvas(page, canvas, cssWidth, pixelRatio);
   if (generation !== renderGeneration) return;
-  canvasWrapMatchOverlaySize(overlayLayer, viewport.width, viewport.height);
+  sizeOverlayLayer(overlayLayer, viewport.width, viewport.height);
 
   if (pageResult.ops.length === 0) {
     caption.textContent = "No extractable text found on this page.";
@@ -385,7 +385,7 @@ function describePageChanges(additions: number, deletions: number): string {
   return `${parts.join(" and ")} on this page.`;
 }
 
-function canvasWrapMatchOverlaySize(
+function sizeOverlayLayer(
   overlayLayer: HTMLDivElement,
   width: number,
   height: number,
